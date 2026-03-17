@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Ace Facility — Dashboard</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+</head>
+<body>
+<div class="app">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M5.5 5.5 Q12 10 18.5 5.5"/>
+          <path d="M5.5 18.5 Q12 14 18.5 18.5"/>
+        </svg>
+      </div>
+      <div>
+        <span class="logo-name">Ace Facility</span>
+        <span class="logo-sub">Management Portal</span>
+      </div>
+    </div>
+
+    <div class="nav-tabs">
+      <button class="nav-tab active" data-tab="overview"  onclick="switchTab('overview')">Overview</button>
+      <button class="nav-tab"        data-tab="schedule"  onclick="switchTab('schedule')">Schedule</button>
+      <button class="nav-tab"        data-tab="members"   onclick="switchTab('members')">Members</button>
+      <button class="nav-tab"        data-tab="billing"   onclick="switchTab('billing')">Billing</button>
+    </div>
+
+    <div class="topbar-right">
+      <div style="display:flex;align-items:center;gap:5px;">
+        <div class="rt-dot" id="rt-dot"></div>
+        <span class="rt-label">Live</span>
+      </div>
+      <div class="avatar" id="user-avatar">?</div>
+      <button class="btn-sign-out" onclick="signOut()">Sign out</button>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="content">
+
+    <!-- OVERVIEW -->
+    <div id="section-overview" class="section active">
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="kpi-label">Monthly Revenue</div>
+          <div class="kpi-value" id="kpi-revenue">—</div>
+          <div class="kpi-delta up" id="kpi-revenue-delta"></div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Active Members</div>
+          <div class="kpi-value" id="kpi-members">—</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Court Utilization</div>
+          <div class="kpi-value" id="kpi-util">—</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Bookings Today</div>
+          <div class="kpi-value" id="kpi-bookings">—</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">Revenue — Last 6 months</div>
+          <div class="bar-chart" id="rev-chart"></div>
+          <div style="display:flex;gap:12px;font-size:11px;color:var(--text2);margin-top:8px;">
+            <span style="display:flex;align-items:center;gap:5px;">
+              <span style="width:10px;height:10px;background:var(--navy);border-radius:2px;display:inline-block;"></span> Total
+            </span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Court status — now</div>
+          <div class="court-grid" id="court-grid"><div class="loading">Loading…</div></div>
+          <div style="display:flex;gap:10px;margin-top:12px;font-size:11px;color:var(--text2);flex-wrap:wrap;">
+            <span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;background:#9edbb9;border-radius:50%;display:inline-block;"></span> Available</span>
+            <span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;background:#f5a96b;border-radius:50%;display:inline-block;"></span> Booked</span>
+            <span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;background:#ccc;border-radius:50%;display:inline-block;"></span> Maintenance</span>
+          </div>
+          <p style="font-size:11px;color:var(--text3);margin-top:8px;">Click a court to toggle its status.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Recent activity</div>
+        <div class="activity-list" id="activity-list"><div class="loading">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- SCHEDULE -->
+    <div id="section-schedule" class="section">
+      <div class="schedule-header">
+        <div class="date-nav">
+          <button onclick="changeDay(-1)">&#8249;</button>
+          <div class="date-label" id="date-label"></div>
+          <button onclick="changeDay(1)">&#8250;</button>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <select id="court-filter" onchange="loadSchedule()">
+            <option value="all">All courts</option>
+          </select>
+          <button class="btn-main" onclick="openBookingModal()">+ New booking</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Court</th>
+              <th>Member</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="sched-tbody">
+            <tr><td colspan="6" class="loading">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- MEMBERS -->
+    <div id="section-members" class="section">
+      <div class="toolbar">
+        <input class="search-box" type="text" placeholder="Search by name…" oninput="onMemberSearch(this.value)"/>
+        <select onchange="onPlanFilter(this.value)">
+          <option value="all">All plans</option>
+          <option>Gold</option>
+          <option>Silver</option>
+          <option>Bronze</option>
+        </select>
+        <button class="btn-main" onclick="openMemberModal()">+ Add member</button>
+      </div>
+      <div id="member-list"><div class="loading">Loading members…</div></div>
+    </div>
+
+    <!-- BILLING -->
+    <div id="section-billing" class="section">
+      <div class="rev-summary">
+        <div class="rev-card">
+          <div class="rev-card-val" id="rev-paid">—</div>
+          <div class="rev-card-label">Collected</div>
+        </div>
+        <div class="rev-card">
+          <div class="rev-card-val" id="rev-outst">—</div>
+          <div class="rev-card-label">Outstanding</div>
+        </div>
+        <div class="rev-card">
+          <div class="rev-card-val" id="rev-overdue">—</div>
+          <div class="rev-card-label">Overdue</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Recent invoices</div>
+        <div id="invoice-list"><div class="loading">Loading…</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- BOOKING MODAL -->
+<div id="booking-modal" class="modal-backdrop" style="display:none;" onclick="if(event.target===this)closeBookingModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">New booking</span>
+      <button class="modal-close" onclick="closeBookingModal()">&#215;</button>
+    </div>
+    <div class="form-group">
+      <label>Member</label>
+      <select id="modal-member"></select>
+    </div>
+    <div class="form-group">
+      <label>Court</label>
+      <select id="modal-court"></select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="modal-date"/>
+      </div>
+      <div class="form-group">
+        <label>Time</label>
+        <select id="modal-time">
+          <option>07:00</option><option>08:00</option><option>09:00</option>
+          <option>10:00</option><option>11:00</option><option>12:00</option>
+          <option>13:00</option><option>14:00</option><option>15:00</option>
+          <option>16:00</option><option>17:00</option><option>18:00</option>
+          <option>19:00</option><option>20:00</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Session type</label>
+      <select id="modal-type">
+        <option>Singles</option>
+        <option>Doubles</option>
+        <option>Lesson</option>
+        <option>Club session</option>
+      </select>
+    </div>
+    <button class="btn-main" style="width:100%;margin-top:4px;" onclick="submitBooking()">Confirm booking</button>
+  </div>
+</div>
+
+<!-- ADD MEMBER MODAL -->
+<div id="member-modal" class="modal-backdrop" style="display:none;" onclick="if(event.target===this)closeMemberModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Add member</span>
+      <button class="modal-close" onclick="closeMemberModal()">&#215;</button>
+    </div>
+    <div class="form-group">
+      <label>Full name</label>
+      <input type="text" id="m-name" placeholder="Jane Smith"/>
+    </div>
+    <div class="form-group">
+      <label>Email address</label>
+      <input type="email" id="m-email" placeholder="jane@example.com"/>
+    </div>
+    <div class="form-group">
+      <label>Membership plan</label>
+      <select id="m-plan">
+        <option>Bronze</option>
+        <option>Silver</option>
+        <option>Gold</option>
+      </select>
+    </div>
+    <button class="btn-main" style="width:100%;margin-top:4px;" onclick="submitMember()">Add member</button>
+  </div>
+</div>
+
+<script src="js/main.js"></script>
+</body>
+</html>
