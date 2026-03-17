@@ -4,21 +4,18 @@
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-// ---- Auth guard ------------------------------------------
+// ---- Auth guard (DISABLED - public access) ---------------
 let currentUser = null;
 
 async function initAuth() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) { location.href = 'login.html'; return false; }
-  currentUser = session.user;
-  const initials = (currentUser.email || 'U').slice(0, 2).toUpperCase();
-  document.getElementById('user-avatar').textContent = initials;
+  // Auth bypassed - public access mode
+  document.getElementById('user-avatar').textContent = 'AC';
   return true;
 }
 
 async function signOut() {
-  await sb.auth.signOut();
-  location.href = 'login.html';
+  // Auth disabled - just reload
+  location.reload();
 }
 
 // ---- Tab routing -----------------------------------------
