@@ -1,5 +1,5 @@
 // ============================================================
-// CONFIGURATION — edit these two values, then you're done
+// CONFIGURATION — Supabase credentials
 // ============================================================
-const SUPABASE_URL  = 'https://YOUR_PROJECT_ID.supabase.co';
-const SUPABASE_ANON = 'YOUR_ANON_PUBLIC_KEY';
+const SUPABASE_URL = 'https://iwfonkfygirwhuasjdrx.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_dVz0rZu56tyvWbdYbt1Tww_CQFmBxUX';
